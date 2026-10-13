@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>catnapped</title>
+<meta name="description" content="UFO를 탄 외계인 고양이가 내 캐릭터를 데려가요!">
+<meta name="theme-color" content="#0b0c0d">
+<meta property="og:type" content="website">
+<meta property="og:title" content="catnapped">
+<meta property="og:description" content="UFO를 탄 외계인 고양이가 내 캐릭터를 데려가요!">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0c0d'/%3E%3Cpath d='M20 36a12 12 0 0 1 24 0z' fill='%23a8f0d0'/%3E%3Cellipse cx='32' cy='38' rx='22' ry='8' fill='%2314b8a6'/%3E%3Cpath d='M26 46h12l5 10H21z' fill='%2314b8a6' opacity='.45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root {
+    --bg: #e9ebed;
+    --stage: #d6dade;
+    --panel: #f6f7f8;
+    --card: #ffffff;
+    --ink: #15181b;
+    --text2: #3b4148;
+    --muted: #7a828a;
+    --line: #dcdfe3;
+    --black: #0b0c0d;
+    --accent: #14b8a6;
+    --accent-strong: #0d9488;
+    --accent-soft: rgba(20, 184, 166, .12);
+    --accent-ink: #05201d;
+    --topbar: 56px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, "Yu Gothic UI", "Microsoft YaHei UI", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+    line-height: 1.5; display: flex; flex-direction: column; min-height: 100%;
+  }
+  .topbar {
+    height: var(--topbar); flex: none; background: var(--black); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #23272b;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+  .brand h1 i { font-style: normal; color: var(--accent); }
+  .brand > span { font-size: 13px; color: #8b939b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; flex: none; }
+  .langtabs { display: flex; gap: 2px; background: rgba(255,255,255,.06); border: 1px solid #262b30; border-radius: 9999px; padding: 3px; }
+  .langtabs button {
+    font: inherit; font-size: 12px; font-weight: 700; padding: 6px 12px; border: 0; border-radius: 9999px;
+    background: transparent; color: #9aa1a8; cursor: pointer;
+  }
+  .langtabs button:hover:not(.active) { color: #fff; background: transparent; }
+  .langtabs button.active { background: var(--accent); color: var(--accent-ink); }
+
+  main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 400px; min-height: 0; }
+  .stage {
+    position: sticky; top: var(--topbar); height: calc(100vh - var(--topbar));
+    background: radial-gradient(ellipse at 50% 40%, #e2e5e8 0%, var(--stage) 70%);
+    padding: 20px 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow: hidden;
+  }
+  .stage.drag { outline: 3px dashed var(--accent); outline-offset: -12px; }
+  .viewtabs { display: flex; gap: 4px; background: rgba(255,255,255,.7); border: 1px solid var(--line); border-radius: 9999px; padding: 3px; flex: none; }
+  .viewtabs button { border: 0; background: transparent; padding: 6px 16px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .viewtabs button.active { background: var(--black); color: #fff; }
+  .viewtabs button.active:hover:not(:disabled) { background: var(--black); color: #fff; }
+  .view { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+  #cv, #gifImg {
+    display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
+    border-radius: 6px; box-shadow: 0 10px 40px rgba(11,12,13,.28); background: #0b0e2a;
+  }
+  #cv { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  #cv.dragging { cursor: grabbing; }
+  .transport { flex: none; display: flex; align-items: center; gap: 10px; width: min(560px, 100%); }
+  .transport button { width: 40px; height: 34px; padding: 0; font-size: 13px; flex: none; }
+  .transport input[type=range] { flex: 1; }
+  .transport .tm { font-size: 12px; color: var(--muted); min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+  .tagline { flex: none; margin: 0; font-size: 13px; color: var(--text2); text-align: center; letter-spacing: -0.01em; }
+
+  .side {
+    background: var(--panel); border-left: 1px solid var(--line);
+    height: calc(100vh - var(--topbar)); position: sticky; top: var(--topbar);
+    overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .box { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .box h2 { margin: 0 0 12px; font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: .02em; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row + .row { margin-top: 12px; }
+  .row > label { font-size: 13px; min-width: 76px; color: var(--text2); }
+  .row .val { font-size: 12px; color: var(--muted); min-width: 40px; text-align: right; }
+  .toggle-group { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+  .toggle-group button { flex: 1; font-size: 12px; font-weight: 600; padding: 7px 8px; border-radius: 8px; white-space: nowrap; }
+  .toggle-group button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .toggle-group button.active:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); cursor: pointer; }
+  .check-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+  input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
+  input[type=color] { width: 40px; height: 32px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; flex: none; }
+  button {
+    font: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 9999px;
+    border: 1px solid var(--line); background: #fff; color: var(--text2); cursor: pointer;
+    transition: background .12s, border-color .12s, color .12s;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 8px 18px; font-size: 14px; }
+  button.primary:hover:not(:disabled) { background: #2dd4bf; border-color: #2dd4bf; color: var(--accent-ink); }
+  button.dark { background: var(--black); border-color: var(--black); color: #fff; font-weight: 600; }
+  button.dark:hover:not(:disabled) { background: #23272b; border-color: #23272b; color: #fff; }
+  .full { width: 100%; }
+  .hint { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+  input[type=file] { display: none; }
+  [hidden] { display: none !important; }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .swatches button { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+  .swatches button:hover:not(:disabled) { box-shadow: 0 0 0 2px var(--accent); background: inherit; }
+
+  .mobilebar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--black); border-top: 1px solid #23272b; }
+  .mobilebar button { width: 100%; padding: 12px 18px; font-size: 15px; }
+  @media (max-width: 860px) {
+    .topbar { padding: 0 14px; }
+    .brand { flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.25; }
+    .brand > span { font-size: 11px; }
+    #makeTop { display: none; }
+    .langtabs button { padding: 6px 9px; }
+    html, body { height: auto; }
+    main { display: block; }
+    .stage { position: sticky; top: var(--topbar); z-index: 5; height: 52vh; min-height: 280px; padding: 10px 12px; gap: 8px; box-shadow: 0 6px 16px rgba(11,12,13,.18); }
+    .tagline { display: none; }
+    .side { position: static; height: auto; border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding-bottom: 84px; }
+    .mobilebar { display: block; }
+  }
+  @media (pointer: coarse) {
+    button { min-height: 40px; }
+    .swatches { gap: 8px; }
+    .swatches button { width: 30px; height: 30px; min-height: 0; }
+    input[type=range] { height: 34px; }
+    input[type=color] { width: 48px; height: 40px; }
+    .check-row { min-height: 36px; }
+    .check-row input[type=checkbox] { width: 22px; height: 22px; }
+    .toggle-group button { padding: 9px 8px; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1><span style="color:#fff;font-size:inherit">cat</span><i>napped</i></h1>
+    <span>제작: <a href="https://x.com/swoonqx" target="_blank" rel="noopener noreferrer" style="color:#8b939b; text-decoration:none;">𝕏 @swoonqx</a></span>
+  </div>
+  <div class="topbar-actions">
+    <div class="langtabs" id="langTabs" role="tablist" aria-label="Language / 언어 선택">
+      <button type="button" data-lang="ko" role="tab">KR</button>
+      <button type="button" data-lang="en" role="tab">EN</button>
+      <button type="button" data-lang="ja" role="tab">JP</button>
+      <button type="button" data-lang="zh" role="tab">CN</button>
+    </div>
+    <button id="makeTop" class="primary" data-i18n="makeGif">GIF 만들기</button>
+  </div>
+</header>
+
+<main>
+  <section class="stage" id="stage">
+    <div class="viewtabs" id="viewTabs">
+      <button type="button" class="active" data-view="preview" data-i18n="viewPreview">실시간 미리보기</button>
+      <button type="button" data-view="gif" id="viewGifBtn" disabled data-i18n="viewGif">완성된 GIF</button>
+    </div>
+    <div class="view" id="view">
+      <canvas id="cv" aria-label="preview"></canvas>
+      <img id="gifImg" alt="result GIF" hidden>
+    </div>
+    <div class="transport" id="transport">
+      <button type="button" id="playBtn" aria-label="play / pause">❚❚</button>
+      <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="timeline">
+      <span class="tm" id="tm">0.0s</span>
+    </div>
+    <p class="tagline" id="tagline"></p>
+  </section>
+
+  <aside class="side">
+    <div class="box">
+      <h2 data-i18n="image">캐릭터 이미지</h2>
+      <button id="pickBtn" class="full dark" data-i18n="pickImage">이미지 선택</button>
+      <button id="sampleBtn" class="full" style="margin-top:8px" data-i18n="useSample">샘플 캐릭터 사용</button>
+      <p class="hint" id="imgInfo"></p>
+      <p class="hint" data-i18n="imageHint">배경이 투명한 PNG를 권장해요. 화면에 끌어다 놓거나 붙여넣기도 가능해요.</p>
+      <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/webp">
+    </div>
+
+    <div class="box">
+      <h2 data-i18n="chrBox">캐릭터 위치 · 크기</h2>
+      <div class="row"><label data-i18n="chrSize">크기</label><input type="range" id="chrSize" min="40" max="160" step="5" value="100"><span class="val" id="chrSizeVal"></span></div>
+      <button type="button" id="chrReset" class="full" style="margin-top:12px" data-i18n="chrReset">위치 · 크기 초기화</button>
+      <p class="hint" data-i18n="chrHint">미리보기 화면에서 캐릭터를 끌어서 옮길 수 있어요.</p>
+    </div>
+
+    <div class="box">
+      <h2 data-i18n="ufoBox">UFO · 빔</h2>
+      <div class="row"><label data-i18n="from">등장 방향</label>
+        <div class="toggle-group" id="fromGroup">
+          <button type="button" data-v="right" class="active" data-i18n="fromRight">오른쪽</button>
+          <button type="button" data-v="left" data-i18n="fromLeft">왼쪽</button>
+          <button type="button" data-v="top" data-i18n="fromTop">위</button>
+        </div></div>
+      <div class="row"><label data-i18n="beamColor">빔 색</label><input type="color" id="beamColor" value="#7dfbe6">
+        <div class="swatches" id="beamSw"></div></div>
+      <div class="row"><label data-i18n="starAmt">별 효과</label><input type="range" id="starAmt" min="0" max="40" step="2" value="24"><span class="val" id="starAmtVal"></span></div>
+    </div>
+
+    <div class="box">
+      <h2 data-i18n="sceneBox">배경</h2>
+      <div class="row"><label data-i18n="ratio">화면 비율</label>
+        <div class="toggle-group" id="ratioGroup">
+          <button type="button" data-v="1:1" class="active">1:1</button>
+          <button type="button" data-v="4:3">4:3</button>
+          <button type="button" data-v="3:4">3:4</button>
+          <button type="button" data-v="16:9">16:9</button>
+        </div></div>
+      <div class="row"><label data-i18n="bg">배경</label>
+        <div class="toggle-group" id="bgGroup">
+          <button type="button" data-v="night" class="active" data-i18n="bgNight">밤하늘</button>
+          <button type="button" data-v="solid" data-i18n="bgSolid">단색</button>
+        </div></div>
+      <div class="row" id="bgColorRow" hidden><label data-i18n="bgColor">배경색</label><input type="color" id="bgColor" value="#2b2f6b">
+        <div class="swatches" id="bgSw"></div></div>
+      <div class="row"><label class="check-row" for="ground"><input type="checkbox" id="ground" checked><span data-i18n="ground">바닥 표시</span></label></div>
+      <div class="row"><label class="check-row" for="shadow"><input type="checkbox" id="shadow" checked><span data-i18n="shadow">캐릭터 그림자</span></label></div>
+    </div>
+
+    <div class="box" id="gifBox"></div>
+
+    <div class="box">
+      <p class="hint" style="margin:0" data-i18n="license">만든 GIF는 자유롭게 사용 가능합니다.</p>
+      <p class="hint" style="margin:6px 0 0"><span data-i18n="sampleCredit">샘플 캐릭터:</span> <a href="https://www.irasutoya.com/2013/09/blog-post_8739.html" target="_blank" rel="noopener noreferrer" style="color:inherit">いらすとや</a></p>
+    </div>
+  </aside>
+</main>
+<div class="mobilebar"><button id="makeBar" class="primary" data-i18n="makeGif">GIF 만들기</button></div>
+
+<script src="sample-boy.js"></script>
+<script src="gif-export.js"></script>
+<script src="color-picker.js"></script>
+<script>
+'use strict';
+let gx = null;   // GifExport panel
+/* ============================== i18n ============================== */
+const LANGS = ['ko', 'en', 'ja', 'zh'];
+const S = {
+  madeBy: ['제작:', 'Made by:', '制作:', '制作:'],
+  tagline: ['UFO를 탄 외계인 고양이가 내 캐릭터를 데려가요!', 'An alien cat in a UFO is coming to take your character away!', 'UFOに乗った宇宙人ネコが、あなたのキャラをさらいに来ます！', '乘着 UFO 的外星猫咪，要把你的角色带走啦！'],
+  makeGif: ['GIF 만들기', 'Make GIF', 'GIFを作る', '生成 GIF'],
+  viewPreview: ['실시간 미리보기', 'Live preview', 'リアルタイムプレビュー', '实时预览'],
+  viewGif: ['완성된 GIF', 'Finished GIF', '完成したGIF', '生成的 GIF'],
+  image: ['캐릭터 이미지', 'Character image', 'キャラ画像', '角色图片'],
+  pickImage: ['이미지 선택', 'Choose image', '画像を選択', '选择图片'],
+  useSample: ['샘플 캐릭터 사용', 'Use sample character', 'サンプルキャラを使う', '使用示例角色'],
+  imageHint: ['배경이 투명한 PNG를 권장해요. 화면에 끌어다 놓거나 붙여넣기도 가능해요.', 'A PNG with a transparent background works best. You can also drop or paste onto the page.', '背景が透明なPNGがおすすめです。画面へのドロップや貼り付けもできます。', '推荐使用透明背景的 PNG。也可以拖放或粘贴到页面上。'],
+  imgInfo: ['{w}×{h}px (투명 여백 제외)', '{w}×{h}px (transparent margins trimmed)', '{w}×{h}px（透明な余白を除く）', '{w}×{h}px（已去除透明边距）'],
+  imgFail: ['이미지를 읽을 수 없어요. png/jpg/gif/webp 파일인지 확인해 주세요.', 'Could not read the image. Please use a png/jpg/gif/webp file.', '画像を読み込めません。png/jpg/gif/webpファイルか確認してください。', '无法读取图片，请确认是 png/jpg/gif/webp 文件。'],
+  chrBox: ['캐릭터 위치 · 크기', 'Character position & size', 'キャラの位置・サイズ', '角色位置与大小'],
+  chrSize: ['크기', 'Size', 'サイズ', '大小'],
+  chrReset: ['위치 · 크기 초기화', 'Reset position & size', '位置・サイズをリセット', '重置位置与大小'],
+  chrHint: ['미리보기 화면에서 캐릭터를 끌어서 옮길 수 있어요.', 'Drag the preview to move the character.', 'プレビュー画面でドラッグして動かせます。', '在预览画面中拖动即可移动角色。'],
+  ufoBox: ['UFO · 빔', 'UFO & beam', 'UFO・ビーム', 'UFO 与光束'],
+  from: ['등장 방향', 'Arrives from', '登場方向', '出现方向'],
+  fromRight: ['오른쪽', 'Right', '右', '右侧'],
+  fromLeft: ['왼쪽', 'Left', '左', '左侧'],
+  fromTop: ['위', 'Top', '上', '上方'],
+  beamColor: ['빔 색', 'Beam color', 'ビームの色', '光束颜色'],
+  starAmt: ['별 효과', 'Star sparkles', '星のエフェクト', '星星特效'],
+  sceneBox: ['배경', 'Background', '背景', '背景'],
+  ratio: ['화면 비율', 'Aspect ratio', '画面比率', '画面比例'],
+  bg: ['배경', 'Sky', '背景', '背景'],
+  bgNight: ['밤하늘', 'Night', '夜空', '夜空'],
+  bgSolid: ['단색', 'Solid', '単色', '纯色'],
+  bgColor: ['배경색', 'Color', '背景色', '背景色'],
+  ground: ['바닥 표시', 'Show ground', '地面を表示', '显示地面'],
+  shadow: ['캐릭터 그림자', 'Character shadow', 'キャラの影', '角色阴影'],
+  sampleCredit: ['샘플 캐릭터:', 'Sample character:', 'サンプルキャラ:', '示例角色:'],
+  license: ['만든 GIF는 자유롭게 사용 가능합니다.', 'The GIFs you make are free to use.', '作成したGIFは自由に使用できます。', '制作的 GIF 可自由使用。']
+};
+let lang = (() => {
+  try { const v = localStorage.getItem('catnapped-lang'); if (LANGS.includes(v)) return v; } catch (e) {}
+  const n = (navigator.language || 'ko').slice(0, 2); return LANGS.includes(n) ? n : 'ko';
+})();
+const t = (k, vars) => {
+  const e = S[k]; let s = e ? (e[LANGS.indexOf(lang)] || e[1]) : k;
+  if (vars) for (const v in vars) s = s.replace('{' + v + '}', vars[v]);
+  return s;
+};
+
+/* ============================== utils ============================== */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, k) => a + (b - a) * k;
+const smooth = u => u * u * (3 - 2 * u);
+const TAU = Math.PI * 2;
+const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + (n >> 16) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+function shade(hex, amt) {       // amt < 0 → toward black, > 0 → toward white
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255];
+  const t0 = amt < 0 ? 0 : 255, k = Math.abs(amt);
+  return '#' + c.map(v => Math.round(lerp(v, t0, k)).toString(16).padStart(2, '0')).join('');
+}
+function mulberry(seed) {
+  return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+
+/* ============================== state ============================== */
+const SW = 1000;                                   // scene width in scene units
+const RATIOS = { '1:1': [1, 1], '4:3': [4, 3], '3:4': [3, 4], '16:9': [16, 9] };
+const st = { ratio: '1:1', bg: 'night', bgColor: '#2b2f6b', ground: true, shadow: true, size: 100, ax: 0.5, ay: 0.89, from: 'right', beam: '#7dfbe6', stars: 24 };
+const GROUND_Y = 0.82;                                // ground line (fraction of scene height)
+const sceneH = () => SW * RATIOS[st.ratio][1] / RATIOS[st.ratio][0];
+let chr = null;                                    // { c, w, h, tint:{} } trimmed character
+
+/* ============================== timeline ============================== */
+const T = { enter0: .08, enter1: .30, beam0: .30, beam1: .36, lift0: .36, lift1: .62, off0: .62, off1: .67, exit0: .74, exit1: .90, spawn0: .735, spawn1: .865 };
+const beamAmt = p => smooth(clamp((p - T.beam0) / (T.beam1 - T.beam0), 0, 1)) * (1 - smooth(clamp((p - T.off0) / (T.off1 - T.off0), 0, 1)));
+const liftAmt = p => smooth(clamp((p - T.lift0) / (T.lift1 - T.lift0), 0, 1));
+
+/* ============================== static random data ============================== */
+const SKY = (() => { const r = mulberry(7), a = []; for (let i = 0; i < 90; i++) a.push({ x: r(), y: r() * 0.85, r: 0.8 + r() * 2.2, ph: r(), cyc: 1 + Math.floor(r() * 3), big: r() > .86 }); return a; })();
+const TRAIL = (() => { const r = mulberry(21), a = []; for (let i = 0; i < 40; i++) a.push({ jx: r() * 2 - 1, jy: r() * 2 - 1, sz: 0.55 + r() * 0.75, col: Math.floor(r() * 4), rot: r() * 1.5, cyc: 1 + Math.floor(r() * 3), dot: r() }); return a; })();
+const BEAMSP = (() => { const r = mulberry(99), a = []; for (let i = 0; i < 14; i++) a.push({ x: r() * 2 - 1, ph: r(), sz: 0.6 + r() * 0.8, sp: 1 + Math.floor(r() * 2) }); return a; })();
+const STAR_COLORS = ['#ffffff', '#fff2a0', '#ffa8d8', '#8ff5e6'];
+
+/* ============================== layout ============================== */
+function layoutScene(W, H) {
+  const kBase = Math.min(0.29 * H / chr.h, 0.31 * W / chr.w);
+  const k = kBase * st.size / 100;
+  const cw = chr.w * k, ch = chr.h * k;
+  const ax = st.ax * W, ay = st.ay * H, top = ay - ch;
+  let s = clamp(cw * 1.5 / 380, 0.28 * W / 380, 0.6 * W / 380);
+  s = Math.max(0.18, Math.min(s, (top - 0.10 * H) / 240));
+  const hx = ax, hy = top - 0.06 * H - 90 * s;
+  const dir = st.from === 'right' ? 1 : st.from === 'left' ? -1 : 0;
+  const start = dir ? { x: dir > 0 ? W + 215 * s : -215 * s, y: hy - 0.16 * H } : { x: hx, y: -175 * s - 60 };
+  const beamW = Math.max(cw * 1.9, 210 * s);
+  return { W, H, k, cw, ch, ax, ay, top, s, hx, hy, dir, start, beamW };
+}
+
+/* ============================== UFO path ============================== */
+function ufoAt(p, L) {
+  const { W, H, hx, hy, start: S, dir } = L;
+  let x, y;
+  if (p <= T.enter1) {
+    const u = clamp((p - T.enter0) / (T.enter1 - T.enter0), 0, 1), e = 1 - Math.pow(1 - u, 3);
+    x = lerp(S.x, hx, e);
+    y = lerp(S.y, hy, e) + Math.sin(u * TAU) * 0.022 * H * (1 - u) * (dir ? 1 : 0.3);
+  } else {
+    const hov = Math.sin(Math.PI * clamp((p - T.enter1) / (T.exit0 - T.enter1), 0, 1));
+    x = hx + Math.sin(TAU * p * 3) * 0.006 * W * hov;
+    y = hy + Math.sin(TAU * p * 4) * 0.008 * H * hov;
+    y += 0.035 * H * Math.sin(Math.PI * clamp((p - 0.68) / 0.08, 0, 1));          // anticipation dip
+    if (p > T.exit0) {
+      const u = clamp((p - T.exit0) / (T.exit1 - T.exit0), 0, 1), e = u * u * (0.4 + 0.6 * u);
+      y -= e * (hy + 220 * L.s + 0.3 * H);
+      x += dir * e * 0.16 * W;
+    }
+  }
+  return { x, y };
+}
+function ufoPose(p, L) {
+  const e = 0.004, a = ufoAt(clamp(p - e, 0, 1), L), b = ufoAt(clamp(p + e, 0, 1), L), c = ufoAt(p, L);
+  const vx = (b.x - a.x) / (2 * e) / L.W, vy = (b.y - a.y) / (2 * e) / L.H;
+  const rot = clamp(vx * 0.16, -0.3, 0.3);
+  const stretch = clamp(-vy / 6, 0, 1);
+  return { x: c.x, y: c.y, rot, sx: 1 - 0.14 * stretch, sy: 1 + 0.22 * stretch };
+}
+
+/* ============================== drawing helpers ============================== */
+function star4(g, x, y, r, rot) {
+  g.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const a = rot + i * Math.PI / 2, a2 = a + Math.PI / 2, ac = a + Math.PI / 4;
+    const tx = x + Math.cos(a) * r, ty = y + Math.sin(a) * r;
+    if (i === 0) g.moveTo(tx, ty);
+    g.quadraticCurveTo(x + Math.cos(ac) * r * 0.17, y + Math.sin(ac) * r * 0.17, x + Math.cos(a2) * r, y + Math.sin(a2) * r);
+  }
+  g.closePath(); g.fill();
+}
+function disc(g, x, y, r) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+
+/* ============================== background ============================== */
+function drawBg(g, L, p) {
+  const { W, H } = L;
+  if (st.bg === 'night') {
+    const gr = g.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, '#080b2a'); gr.addColorStop(0.55, '#23236a'); gr.addColorStop(1, '#5a3a8c');
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    for (const s of SKY) {
+      const tw = 0.55 + 0.45 * Math.sin(TAU * (p * s.cyc + s.ph));
+      g.fillStyle = 'rgba(255,255,255,' + (tw * 0.95).toFixed(3) + ')';
+      if (s.big) star4(g, s.x * W, s.y * H, s.r * 3.2 * (0.7 + 0.3 * tw), 0); else disc(g, s.x * W, s.y * H, s.r);
+    }
+    const mx = 0.84 * W, my = 0.13 * H, mr = 0.05 * W;
+    const gl = g.createRadialGradient(mx, my, mr * .6, mx, my, mr * 3);
+    gl.addColorStop(0, 'rgba(255,244,180,.35)'); gl.addColorStop(1, 'rgba(255,244,180,0)');
+    g.fillStyle = gl; g.fillRect(mx - mr * 3, my - mr * 3, mr * 6, mr * 6);
+    g.fillStyle = '#fff3b8'; disc(g, mx, my, mr);
+    g.fillStyle = 'rgba(214,196,120,.55)'; disc(g, mx - mr * .3, my - mr * .2, mr * .22); disc(g, mx + mr * .35, my + mr * .3, mr * .16); disc(g, mx + mr * .1, my - mr * .5, mr * .1);
+  } else {
+    g.fillStyle = st.bgColor; g.fillRect(0, 0, W, H);
+  }
+}
+function drawGround(g, L) {
+  const { W, H, ay } = L, y = GROUND_Y * H;
+  let c0, c1;
+  if (st.bg === 'night') { c0 = '#2e2f7e'; c1 = '#12153e'; }
+  else { c0 = shade(st.bgColor, 0.18); c1 = shade(st.bgColor, -0.32); }
+  const gr = g.createLinearGradient(0, y, 0, H);
+  gr.addColorStop(0, c0); gr.addColorStop(Math.min(1, 14 / Math.max(1, H - y)), c1); gr.addColorStop(1, c1);
+  g.fillStyle = gr; g.fillRect(0, y, W, H - y + 2);
+}
+
+/* ============================== beam ============================== */
+function beamGeom(L, u, b) {
+  const topY = u.y + 72 * L.s, topW = Math.max(30 * L.s, Math.min(0.32 * L.cw, 62 * L.s));   // starts hidden behind the bowl (half-width there ~74s)
+  const fullLen = Math.max(12, L.ay + 6 - topY), len = fullLen * b;
+  const botW = L.beamW / 2, wAt = topW + (botW - topW) * b;
+  return { x: u.x, topY, bY: topY + len, topW, wAt, len };
+}
+function tracePoly(g, B, k) {
+  g.beginPath();
+  g.moveTo(B.x - B.topW * k, B.topY); g.lineTo(B.x + B.topW * k, B.topY);
+  g.lineTo(B.x + B.wAt * k, B.bY); g.lineTo(B.x - B.wAt * k, B.bY); g.closePath();
+}
+function drawBeamBack(g, L, u, b, p) {
+  const B = beamGeom(L, u, b), col = st.beam;
+  const ry = B.wAt * 0.19, total = Math.max(1, B.len + ry), k = B.len / total;
+  // soft pool of light on the ground (radial falloff, no hard edge)
+  g.save(); g.translate(B.x, B.bY); g.scale(1, 0.2);
+  const pool = g.createRadialGradient(0, 0, 0, 0, 0, B.wAt * 1.3);
+  pool.addColorStop(0, rgba(col, 0.3 * b)); pool.addColorStop(0.55, rgba(col, 0.14 * b)); pool.addColorStop(1, rgba(col, 0));
+  g.fillStyle = pool; g.beginPath(); g.arc(0, 0, B.wAt * 1.3, 0, TAU); g.fill(); g.restore();
+  // beam + rounded foot as ONE shape with one vertical gradient, so beam and ground light blend seamlessly
+  const gr = g.createLinearGradient(0, B.topY, 0, B.bY + ry);
+  gr.addColorStop(0, rgba(col, 0.82)); gr.addColorStop(k, rgba(col, 0.32)); gr.addColorStop(1, rgba(col, 0.03));
+  g.fillStyle = gr; g.beginPath();
+  g.moveTo(B.x - B.topW, B.topY); g.lineTo(B.x + B.topW, B.topY); g.lineTo(B.x + B.wAt, B.bY);
+  g.ellipse(B.x, B.bY, B.wAt, ry, 0, 0, Math.PI);
+  g.closePath(); g.fill();
+  // side edges fade out into the ground light
+  const sg = g.createLinearGradient(0, B.topY, 0, B.bY);
+  sg.addColorStop(0, rgba(col, 0.95)); sg.addColorStop(1, rgba(col, 0));
+  g.strokeStyle = sg; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(B.x - B.topW, B.topY); g.lineTo(B.x - B.wAt, B.bY); g.moveTo(B.x + B.topW, B.topY); g.lineTo(B.x + B.wAt, B.bY); g.stroke();
+  // rising sparkles stay behind the character so they never sit on its face
+  if (B.len < 4) return;
+  for (const s of BEAMSP) {
+    const f = (p * s.sp + s.ph) % 1, y = B.bY - f * B.len, w = lerp(B.wAt, B.topW, f) * 0.78;
+    const k = Math.sin(Math.PI * f) * b;
+    if (k < 0.05) continue;
+    g.fillStyle = '#fff';
+    star4(g, B.x + s.x * w, y, (7 + 9 * s.sz) * Math.max(0.6, L.s * 1.2) * k, f * 4);
+  }
+}
+function drawBeamFront() {}
+/* ============================== character ============================== */
+function tinted(color) {
+  if (!chr.tint[color]) {
+    const c = mkCanvas(chr.w, chr.h), g = c.getContext('2d');
+    g.drawImage(chr.c, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = color; g.fillRect(0, 0, chr.w, chr.h);
+    chr.tint[color] = c;
+  }
+  return chr.tint[color];
+}
+function drawChar(g, L, p, u, a, b) {
+  const { cw, ch } = L;
+  const idle = a === 0 && p < T.beam0;
+  const sy = idle ? 1 + 0.03 * Math.sin(TAU * p * 10) : 1;
+  const rest = { x: L.ax, y: L.ay - ch * sy / 2 };
+  const tg = { x: u.x, y: u.y + 60 * L.s };
+  const sway = Math.sin(Math.PI * a);
+  const shake = b * (1 - clamp(a * 8, 0, 1));
+  const cx = lerp(rest.x, tg.x, a) + Math.sin(TAU * a * 3) * cw * 0.07 * sway + Math.sin(p * 251) * 3 * shake;
+  const cy = lerp(rest.y, tg.y, a);
+  const rotAmp = clamp(0.25 * cw / ch, 0.08, 0.45);                 // tall characters tilt less so they stay inside the beam
+  const rot = Math.sin(TAU * a * 2.5) * rotAmp * sway + Math.sin(p * 190) * 0.03 * shake;
+  const scl = 1 - 0.9 * Math.pow(a, 1.15);
+  const alpha = 1 - smooth(clamp((a - 0.88) / 0.12, 0, 1));
+  g.save();
+  g.translate(cx, cy); g.rotate(rot); g.scale(scl * (1 - (sy - 1) * 0.5), scl * sy);
+  g.globalAlpha = alpha;
+  g.drawImage(chr.c, -cw / 2, -ch / 2, cw, ch);
+  const tint = smooth(b) * 0.14;
+  if (tint > 0.01) { g.globalAlpha = alpha * tint; g.drawImage(tinted(st.beam), -cw / 2, -ch / 2, cw, ch); }
+  g.restore();
+}
+
+/* ============================== alien cat UFO ============================== */
+const G_LINE = '#7fc44a', G_DARK = '#585768', LINE_PINK = '#d8b2ac';
+function softBlob(g, x, y, rx, ry, rot, rgb, a) {   // feathered ellipse (radial falloff)
+  g.save(); g.translate(x, y); g.rotate(rot); g.scale(1, ry / rx);
+  const gr = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+  gr.addColorStop(0, 'rgba(' + rgb + ',' + a + ')'); gr.addColorStop(0.55, 'rgba(' + rgb + ',' + (a * 0.6).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + rgb + ',0)');
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, rx, 0, TAU); g.fill(); g.restore();
+}
+function smileEyePath(g, x, y, w, h) {                // rounded right-triangle "smiling" eye: round top, flat bottom
+  const P = (a, b) => [x + a * w, y + b * h];
+  g.beginPath();
+  g.moveTo(...P(-0.85, 0.5));
+  g.bezierCurveTo(...P(-0.3, 0.56), ...P(0.4, 0.56), ...P(0.8, 0.46));
+  g.bezierCurveTo(...P(1.02, 0.40), ...P(1.08, 0.15), ...P(0.9, -0.05));
+  g.bezierCurveTo(...P(0.6, -0.40), ...P(0.2, -0.55), ...P(-0.25, -0.55));
+  g.bezierCurveTo(...P(-0.8, -0.55), ...P(-1.05, -0.2), ...P(-1.02, 0.15));
+  g.bezierCurveTo(...P(-1.0, 0.4), ...P(-0.95, 0.5), ...P(-0.85, 0.5));
+  g.closePath();
+}
+function drawUfo(g, o) {
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const waving = o.eye === 'happy';
+  // ---- alien cat ----
+  const HEAD = '#a8dd6c', BODY = '#b1df66';
+  const skin = g.createLinearGradient(0, -97, 0, -27);
+  skin.addColorStop(0, '#abdf70'); skin.addColorStop(1, '#9bd562');
+  g.save(); g.translate(0, 14);                        // sits low in the dome
+  // waving arm: the very back layer, so body and head overlap its base
+  if (waving) {
+    const wv = Math.sin(TAU * o.t * 10) * 4.5;
+    const px = -63 + wv * 0.6, py = -55 - Math.abs(wv) * 0.25;
+    g.beginPath(); g.moveTo(-14, -30); g.quadraticCurveTo(-50, -24, px + 1, py + 9);
+    g.lineWidth = 14; g.strokeStyle = G_LINE; g.stroke();
+    g.lineWidth = 8; g.strokeStyle = BODY; g.stroke();
+    g.fillStyle = BODY; g.strokeStyle = G_LINE; g.lineWidth = 3.2;
+    g.beginPath(); g.ellipse(px, py, 10, 9.6, 0, 0, TAU); g.fill(); g.stroke();
+  }
+  // antennae
+  for (const sd of [-1, 1]) {
+    const tx = sd * (23 + o.wig * 3), ty = -121;
+    g.strokeStyle = G_LINE; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(sd * 19, -90); g.quadraticCurveTo(sd * 20, -108, tx, ty + 5); g.stroke();
+    g.fillStyle = '#bfe98f'; g.lineWidth = 2.6;
+    g.beginPath(); g.arc(tx, ty, 6.2, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(225,248,255,.95)'; disc(g, tx - 1.8, ty - 1.8, 2.2);
+  }
+  // ears first (their base sits inside the head, so the head outline flows straight into the ear)
+  g.lineWidth = 3.2; g.strokeStyle = G_LINE;
+  for (const sd of [-1, 1]) {
+    g.fillStyle = HEAD;
+    g.beginPath(); g.moveTo(sd * 15, -86);
+    g.quadraticCurveTo(sd * 36, -99, sd * 49, -104);
+    g.quadraticCurveTo(sd * 59, -106, sd * 57, -95);
+    g.quadraticCurveTo(sd * 55, -84, sd * 45, -64);
+    g.lineTo(sd * 20, -60);
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#c6ec9a';
+    g.beginPath(); g.moveTo(sd * 27, -86);
+    g.quadraticCurveTo(sd * 41, -94, sd * 49, -97);
+    g.quadraticCurveTo(sd * 53, -96, sd * 52, -91);
+    g.quadraticCurveTo(sd * 51, -82, sd * 46, -74);
+    g.closePath(); g.fill();
+  }
+  // body
+  g.fillStyle = BODY; g.strokeStyle = G_LINE; g.lineWidth = 3.2;
+  g.beginPath(); g.ellipse(0, -32, 28, 25, 0, 0, TAU); g.fill(); g.stroke();
+  // head (drawn over the ear bases)
+  g.fillStyle = skin;
+  g.beginPath(); g.ellipse(0, -62, 49, 35, 0, 0, TAU); g.fill(); g.stroke();
+  // cover the ear-base seam inside the head so only the outline remains
+  g.save(); g.beginPath(); g.ellipse(0, -62, 47.4, 33.4, 0, 0, TAU); g.clip();
+  g.fillStyle = skin; g.fillRect(-60, -110, 120, 90); g.restore();
+  softBlob(g, -13.5, -81, 17, 6.5, -0.12, '208,247,160', 0.85);        // soft top gloss
+  // eyes
+  for (const sd of [-1, 1]) {
+    const x = sd * 19.6, y = -56;
+    if (o.eye === 'open') {
+      smileEyePath(g, x, y, 11, 14.5); g.fillStyle = G_DARK; g.fill();
+      g.fillStyle = '#c6e9f1'; g.beginPath(); g.ellipse(x - 3.6, y - 2.8, 4.2, 3.3, -0.25, 0, TAU); g.fill();
+      g.fillStyle = 'rgba(166,150,180,.95)'; g.beginPath(); g.ellipse(x + 3.2, y + 3.8, 4.4, 2.1, 0, 0, TAU); g.fill();
+    } else if (o.eye === 'blink') {
+      g.strokeStyle = G_DARK; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 9, y + 3); g.lineTo(x + 9, y + 3); g.stroke();
+    } else {
+      g.strokeStyle = G_DARK; g.lineWidth = 3.2; g.beginPath(); g.arc(x, y + 4, 8, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+    }
+  }
+  for (const sd of [-1, 1]) softBlob(g, sd * 33, -46, 13, 7.5, 0, '255,128,150', 0.55);   // blush
+  g.strokeStyle = '#6b6978'; g.lineWidth = 1.9;
+  if (o.mouth === 'smile') {
+    g.beginPath(); g.moveTo(-7.6, -43); g.quadraticCurveTo(-3.8, -37.4, 0, -42.6); g.quadraticCurveTo(3.8, -37.4, 7.6, -43); g.stroke();
+  } else if (o.mouth === 'open') {
+    g.fillStyle = '#d9707e'; g.beginPath(); g.ellipse(0, -41, 3, 4, 0, 0, TAU); g.fill(); g.stroke();
+  } else {
+    g.fillStyle = '#d9707e'; g.beginPath(); g.arc(0, -44, 5.4, 0, Math.PI); g.closePath(); g.fill(); g.stroke();
+  }
+  // paws
+  g.fillStyle = BODY; g.strokeStyle = G_LINE; g.lineWidth = 3.2;
+  g.beginPath(); g.ellipse(40, -23, 10, 9.6, 0, 0, TAU); g.fill(); g.stroke();
+  if (!waving) {
+    g.beginPath(); g.ellipse(-40, -23, 10, 9.6, 0, 0, TAU); g.fill(); g.stroke();
+  }
+  g.restore();
+
+  // ---- dome ----
+  const domePath = (open) => {
+    g.beginPath(); g.moveTo(-110, -8); g.bezierCurveTo(-121, -92, -76, -143, 0, -145); g.bezierCurveTo(76, -143, 121, -92, 110, -8);
+    if (!open) { g.lineTo(110, 6); g.lineTo(-110, 6); g.closePath(); }
+  };
+  const dg = g.createLinearGradient(0, -145, 0, 0);
+  dg.addColorStop(0, 'rgba(105,185,235,.5)'); dg.addColorStop(0.6, 'rgba(180,215,225,.25)'); dg.addColorStop(1, 'rgba(245,235,175,.26)');
+  domePath(); g.fillStyle = dg; g.fill();
+  g.save(); domePath(); g.clip();
+  g.globalCompositeOperation = 'screen';
+  g.strokeStyle = "rgba(200,228,252,.88)"; g.lineWidth = 11; g.lineCap = "round";   // flat cel highlight (no gradient)
+  g.beginPath(); g.moveTo(-72, -98); g.quadraticCurveTo(-62, -116, -42, -124); g.stroke();
+  g.restore();
+  domePath(true); g.strokeStyle = 'rgba(80,158,200,1)'; g.lineWidth = 6.5; g.stroke();
+
+  // ---- saucer: thick, rounded lens (dome is ~62% of its width), small bowl below, three lights ----
+  const hg = g.createLinearGradient(0, 60, 0, 92);
+  hg.addColorStop(0, '#f6e9a0'); hg.addColorStop(1, '#ecd97c');
+  g.fillStyle = hg; g.strokeStyle = '#dcc77c'; g.lineWidth = 2.5;
+  g.beginPath(); g.moveTo(-86, 58); g.bezierCurveTo(-72, 84, -38, 92, 0, 92); g.bezierCurveTo(38, 92, 72, 84, 86, 58); g.closePath(); g.fill(); g.stroke();
+  const disc_ = () => {
+    g.beginPath(); g.moveTo(-110, -8);
+    g.bezierCurveTo(-72, -8, -32, -3, 0, -3);
+    g.bezierCurveTo(32, -3, 72, -8, 110, -8);
+    g.bezierCurveTo(140, -8, 166, 2, 175, 18);
+    g.bezierCurveTo(181, 32, 172, 46, 155, 52);
+    g.bezierCurveTo(120, 64, 60, 68, 0, 68);
+    g.bezierCurveTo(-60, 68, -120, 64, -155, 52);
+    g.bezierCurveTo(-172, 46, -181, 32, -175, 18);
+    g.bezierCurveTo(-166, 2, -140, -8, -110, -8);
+    g.closePath();
+  };
+  const lg = g.createLinearGradient(0, -8, 0, 68);
+  lg.addColorStop(0, '#fbf1ea'); lg.addColorStop(1, '#f2e2da');
+  disc_(); g.fillStyle = lg; g.fill();
+  g.save(); disc_(); g.clip();
+  // cyan rim along the whole lower edge (one continuous band)
+  g.strokeStyle = '#5ae6d8'; g.lineWidth = 16;
+  g.beginPath(); g.moveTo(-180, 40); g.bezierCurveTo(-170, 58, -120, 70, 0, 72); g.bezierCurveTo(120, 70, 170, 58, 180, 40); g.stroke();
+  // one continuous groove
+  g.strokeStyle = LINE_PINK; g.lineWidth = 3.4;
+  g.beginPath(); g.moveTo(-170, 26); g.bezierCurveTo(-120, 46, -50, 50, 0, 50); g.bezierCurveTo(50, 50, 120, 46, 170, 26); g.stroke();
+  g.restore();
+  // three round lights
+  for (const x of [-80, 0, 80]) {
+    const y = x ? 24 : 27;
+    g.fillStyle = '#ea7a80'; g.strokeStyle = LINE_PINK; g.lineWidth = 2.8;
+    g.beginPath(); g.arc(x, y, 9, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.55)'; disc(g, x - 2.8, y - 3, 2.6);
+  }
+  disc_(); g.strokeStyle = LINE_PINK; g.lineWidth = 3.4; g.stroke();
+}
+function drawUfoAt(g, L, p, pose, b) {
+  const happy = p >= 0.64 && p <= 0.90;
+  const blink = (p >= 0.17 && p < 0.185) || (p >= 0.50 && p < 0.51) || (p >= 0.93 && p < 0.945);
+  g.save();
+  g.translate(pose.x, pose.y); g.rotate(pose.rot); g.scale(L.s * pose.sx, L.s * pose.sy);
+  drawUfo(g, {
+    t: p, color: st.beam, glow: b,
+    wig: Math.sin(TAU * p * 6),
+    eye: happy ? 'happy' : blink ? 'blink' : 'open',
+    mouth: happy ? 'grin' : (p >= T.beam0 && p < T.off1) ? 'open' : 'smile'
+  });
+  g.restore();
+}
+
+/* ============================== star trail ============================== */
+function drawTrail(g, L, p) {
+  const N = st.stars;
+  if (!N || p < T.spawn0) return;
+  for (let i = 0; i < N; i++) {
+    const d = TRAIL[i % TRAIL.length], f = i / Math.max(1, N - 1);
+    const ts = lerp(T.spawn0, T.spawn1, f);
+    const life = clamp(0.995 - ts, 0.07, 0.2);
+    const tau = (p - ts) / life;
+    if (tau < 0 || tau > 1) continue;
+    const c = ufoAt(ts, L);
+    const x = c.x + d.jx * 130 * L.s, y = c.y + d.jy * 80 * L.s + tau * 0.03 * L.H;
+    // opaque stars that pop in and shrink away (no translucent, muddy fading)
+    const env = smooth(Math.min(tau / 0.18, 1)) * (1 - smooth(clamp((tau - 0.6) / 0.4, 0, 1)));
+    const tw = 0.8 + 0.2 * Math.sin(TAU * tau * d.cyc * 2);
+    const r = (16 + 22 * d.sz) * Math.max(0.7, L.s * 1.3) * tw * env;
+    if (r < 0.6) continue;
+    g.fillStyle = STAR_COLORS[d.col];
+    star4(g, x, y, r, d.rot + tau * 0.8);
+    g.fillStyle = STAR_COLORS[(d.col + 1) % 4];
+    disc(g, x + r * 0.9 * (d.dot > .5 ? 1 : -1), y - r * 0.7, r * 0.16);
+    star4(g, x - r * 0.95 * (d.dot > .5 ? 1 : -1), y + r * 0.8, r * 0.38, 0.4);
+  }
+}
+
+/* ============================== scene ============================== */
+function drawScene(g, w, p) {
+  if (!chr) return;
+  const W = SW, H = sceneH();
+  g.setTransform(w / W, 0, 0, w / W, 0, 0);
+  const L = layoutScene(W, H);
+  drawBg(g, L, p);
+  if (st.ground) drawGround(g, L);
+  const b = beamAmt(p), a = liftAmt(p), pose = ufoPose(p, L);
+  const charOn = p < T.off0 + 0.001 && a < 0.995;
+  if (st.shadow && charOn) {
+    const rx = L.cw * 0.46 * (1 - a * 0.55);
+    g.fillStyle = 'rgba(0,0,0,' + (0.3 * (1 - a)).toFixed(3) + ')';
+    g.beginPath(); g.ellipse(L.ax, L.ay + 1, rx, rx * 0.2, 0, 0, TAU); g.fill();
+  }
+  if (b > 0.001) drawBeamBack(g, L, pose, b, p);
+  if (charOn) drawChar(g, L, p, pose, a, b);
+  if (b > 0.001) drawBeamFront(g, L, pose, b, p);
+  drawTrail(g, L, p);
+  if (p >= T.enter0 - 0.02 && p <= 0.93) drawUfoAt(g, L, p, pose, b);
+}
+
+/* ============================== character loading ============================== */
+function setCharacter(source, w, h) {
+  const sc = Math.min(1, 900 / Math.max(w, h));
+  const cw = Math.max(1, Math.round(w * sc)), chh = Math.max(1, Math.round(h * sc));
+  const c = mkCanvas(cw, chh), cg = c.getContext('2d', { willReadFrequently: true });
+  cg.drawImage(source, 0, 0, cw, chh);
+  let d; try { d = cg.getImageData(0, 0, cw, chh).data; } catch (e) { d = new Uint8ClampedArray(cw * chh * 4).fill(255); }   // file:// → no pixel access
+  let x0 = cw, y0 = chh, x1 = -1, y1 = -1;
+  for (let y = 0; y < chh; y++) for (let x = 0; x < cw; x++) {
+    if (d[(y * cw + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) { x0 = 0; y0 = 0; x1 = cw - 1; y1 = chh - 1; }
+  const tw = x1 - x0 + 1, th = y1 - y0 + 1;
+  const tc = mkCanvas(tw, th); tc.getContext('2d').drawImage(c, x0, y0, tw, th, 0, 0, tw, th);
+  chr = { c: tc, w: tw, h: th, tint: {} };
+  $('imgInfo').textContent = t('imgInfo', { w: tw, h: th });
+  if (gx) gx.refresh();
+}
+function loadFile(f) {
+  if (!f || !/^image\//.test(f.type)) return;
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => { setCharacter(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(url); resetPos(); setPhase(0); };
+  im.onerror = () => { URL.revokeObjectURL(url); alert(t('imgFail')); };
+  im.src = url;
+}
+function makeSample() {
+  if (!window.SAMPLE_CHARACTER) { makeFallbackSample(); return; }
+  const im = new Image();
+  im.onload = () => { setCharacter(im, im.naturalWidth, im.naturalHeight); };
+  im.onerror = makeFallbackSample;
+  im.src = window.SAMPLE_CHARACTER;
+}
+function makeFallbackSample() {
+  const c = mkCanvas(320, 400), g = c.getContext('2d');
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = 7; g.strokeStyle = '#3a2840';
+  const E = (x, y, rx, ry, rot, fill) => { g.fillStyle = fill; g.beginPath(); g.ellipse(x, y, rx, ry, rot || 0, 0, TAU); g.fill(); g.stroke(); };
+  E(104, 62, 26, 66, -0.14, '#fff0f6'); E(104, 66, 12, 46, -0.14, '#ffb8d0');
+  E(216, 62, 26, 66, 0.14, '#fff0f6'); E(216, 66, 12, 46, 0.14, '#ffb8d0');
+  E(120, 372, 34, 18, 0, '#fff0f6'); E(200, 372, 34, 18, 0, '#fff0f6');
+  E(160, 292, 76, 80, 0, '#ffd9e8');
+  E(160, 168, 112, 92, 0, '#fff7fa');
+  E(46, 292, 20, 26, 0.5, '#fff0f6'); E(274, 292, 20, 26, -0.5, '#fff0f6');
+  g.fillStyle = '#3a2840'; g.beginPath(); g.ellipse(122, 168, 11, 15, 0, 0, TAU); g.fill(); g.beginPath(); g.ellipse(198, 168, 11, 15, 0, 0, TAU); g.fill();
+  g.fillStyle = '#fff'; disc(g, 118, 162, 4.5); disc(g, 194, 162, 4.5);
+  g.fillStyle = 'rgba(255,120,170,.55)'; g.beginPath(); g.ellipse(94, 196, 15, 9, 0, 0, TAU); g.fill(); g.beginPath(); g.ellipse(226, 196, 15, 9, 0, 0, TAU); g.fill();
+  g.lineWidth = 5; g.beginPath(); g.arc(152, 192, 8, 0.1, Math.PI - 0.1); g.stroke(); g.beginPath(); g.arc(168, 192, 8, 0.1, Math.PI - 0.1); g.stroke();
+  setCharacter(c, 320, 400);
+}
+function resetPos() { st.ax = 0.5; st.ay = 0.89; st.size = 100; $('chrSize').value = 100; syncVals(); }
+
+/* ============================== preview loop ============================== */
+const cv = $('cv'), cx = cv.getContext('2d');
+const PREVIEW_W = 720;
+let phase = 0, playing = true, lastTs = 0, dragging = null;
+const getDur = () => { const el = document.querySelector('#gifBox [data-gx-dur]'); return (el && parseFloat(el.value)) || 4; };
+function sizeCanvas() {
+  const h = Math.round(PREVIEW_W * sceneH() / SW);
+  if (cv.width !== PREVIEW_W || cv.height !== h) { cv.width = PREVIEW_W; cv.height = h; }
+}
+function setPhase(p) { phase = clamp(p, 0, 1); $('scrub').value = Math.round(phase * 1000); }
+function setPlaying(v) { playing = v; $('playBtn').textContent = v ? '❚❚' : '▶'; }
+function tick(ts) {
+  requestAnimationFrame(tick);
+  const dt = lastTs ? Math.min(0.1, (ts - lastTs) / 1000) : 0; lastTs = ts;
+  if (playing && !dragging) { phase = (phase + dt / getDur()) % 1; $('scrub').value = Math.round(phase * 1000); }
+  $('tm').textContent = (phase * getDur()).toFixed(1) + 's';
+  if (!chr || $('cv').hidden) return;
+  sizeCanvas();
+  drawScene(cx, cv.width, phase);
+}
+requestAnimationFrame(tick);
+$('playBtn').addEventListener('click', () => setPlaying(!playing));
+$('scrub').addEventListener('input', e => { phase = e.target.value / 1000; setPlaying(false); });
+
+/* drag the character in the preview */
+function scenePt(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * SW, y: (e.clientY - r.top) / r.height * sceneH() };
+}
+cv.addEventListener('pointerdown', e => {
+  const pt = scenePt(e), H = sceneH();
+  dragging = { dx: st.ax * SW - pt.x, dy: st.ay * H - pt.y, was: playing };
+  setPlaying(false); setPhase(0);
+  cv.setPointerCapture(e.pointerId); cv.classList.add('dragging');
+});
+cv.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const pt = scenePt(e), H = sceneH();
+  st.ax = clamp((pt.x + dragging.dx) / SW, 0.06, 0.94);
+  st.ay = clamp((pt.y + dragging.dy) / H, GROUND_Y + 0.03, 0.98);        // feet stay on the ground
+});
+const endDrag = () => { if (!dragging) return; if (dragging.was) setPlaying(true); dragging = null; cv.classList.remove('dragging'); };
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+
+/* ============================== controls ============================== */
+function activate(group, v) { group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.v === v)); }
+function bindGroup(id, key, after) {
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    st[key] = b.dataset.v; activate($(id), st[key]); if (after) after();
+  });
+}
+bindGroup('ratioGroup', 'ratio', () => { if (gx) gx.refresh(); });
+bindGroup('bgGroup', 'bg', () => { $('bgColorRow').hidden = st.bg !== 'solid'; });
+bindGroup('fromGroup', 'from');
+function syncVals() {
+  $('chrSizeVal').textContent = st.size + '%';
+  $('starAmtVal').textContent = st.stars;
+}
+$('chrSize').addEventListener('input', e => { st.size = +e.target.value; syncVals(); });
+$('starAmt').addEventListener('input', e => { st.stars = +e.target.value; syncVals(); });
+$('chrReset').addEventListener('click', resetPos);
+$('ground').addEventListener('change', e => { st.ground = e.target.checked; });
+$('shadow').addEventListener('change', e => { st.shadow = e.target.checked; });
+$('beamColor').addEventListener('input', e => { st.beam = e.target.value; });
+$('bgColor').addEventListener('input', e => { st.bgColor = e.target.value; });
+function swatches(id, colors, input, key) {
+  $(id).innerHTML = colors.map(c => '<button type="button" style="background:' + c + '" data-c="' + c + '" aria-label="' + c + '"></button>').join('');
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    st[key] = b.dataset.c; $(input).value = b.dataset.c;
+  });
+}
+swatches('beamSw', ['#7dfbe6', '#c8ff6a', '#ffe66d', '#ff9fe5', '#9fb6ff', '#ffffff'], 'beamColor', 'beam');
+swatches('bgSw', ['#2b2f6b', '#0f766e', '#7c3aed', '#f9a8d4', '#fde68a', '#0b0c0d'], 'bgColor', 'bgColor');
+
+/* views */
+let gifUrl = null;
+function setView(v) {
+  const gif = v === 'gif';
+  $('cv').hidden = gif; $('gifImg').hidden = !gif; $('transport').hidden = gif;
+  $('viewTabs').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+}
+$('viewTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.disabled) setView(b.dataset.view); });
+
+/* image input */
+$('pickBtn').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; });
+$('sampleBtn').addEventListener('click', () => { makeSample(); resetPos(); setPhase(0); });
+const stage = $('stage');
+['dragenter', 'dragover'].forEach(n => stage.addEventListener(n, e => { e.preventDefault(); stage.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(n => stage.addEventListener(n, e => { e.preventDefault(); stage.classList.remove('drag'); }));
+stage.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
+document.addEventListener('paste', e => {
+  for (const it of (e.clipboardData && e.clipboardData.items) || []) if (it.type.startsWith('image/')) { loadFile(it.getAsFile()); break; }
+});
+
+/* ============================== GIF export ============================== */
+gx = GifExport.mount($('gifBox'), {
+  getLang: () => lang,
+  getSize: () => chr ? { w: SW, h: Math.round(sceneH()) } : null,
+  renderFrame: (ctx, w, h, p) => drawScene(ctx, w, p),
+  filename: () => 'catnapped.gif',
+  defaults: { size: 480, fps: 15, dur: 4 },
+  onDone: r => { gifUrl = r.url; $('gifImg').src = gifUrl; $('viewGifBtn').disabled = false; setView('gif'); }
+});
+const make = () => { if (!gx) return; $('gifBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); gx.make(); };
+$('makeTop').addEventListener('click', make);
+$('makeBar').addEventListener('click', make);
+
+/* ============================== language ============================== */
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $('langTabs').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  const bs = document.querySelector('.brand > span'); if (bs) bs.childNodes[0].nodeValue = t('madeBy') + ' ';
+  $('tagline').textContent = t('tagline');
+  const d = document.querySelector('meta[name=description]'); if (d) d.content = t('tagline');
+  if (chr) $('imgInfo').textContent = t('imgInfo', { w: chr.w, h: chr.h });
+  if (gx) gx.refresh();
+}
+$('langTabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  lang = b.dataset.lang; try { localStorage.setItem('catnapped-lang', lang); } catch (x) {}
+  applyLang();
+});
+
+/* ============================== init ============================== */
+['beamColor', 'bgColor'].forEach(id => ColorPicker.attach($(id), { getLang: () => lang }));
+syncVals();
+makeSample();
+applyLang();
+</script>
+</body>
+</html>
